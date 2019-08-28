@@ -44,12 +44,17 @@ OuyaSDK.IResumeListener
 	//pipe generation
 	private float newPipeFrequency = 2f; //every how many seconds to drop a new pipe
 	private float newPipeOffSet = 35f; //how far ahead to generate new pipes
+	private float newPipeDoubleOdds = 5f;  // one over this var are the odds of a double pipe being dropped in a multiplayer game
+
 	private float newPipeMinY = -5f;	//upper bound for random new pipe height
 	private float newPipeMaxY = 4f;		//lower bound for random new pipe height
-	private float newPipeMinYHell = -3f;	//upper bound for random new pipe height
-	private float newPipeMaxYHell = 4f;		//lower bound for random new pipe height
+	private float newDoublePipeMinY = -1f;
+	private float newDoublePipeMaxY = 1f;
+	private float newPipeMinYHell = -3f;
+	private float newPipeMaxYHell = 4f;
 
 	private float newPipeTimer;	//initialize new pipe timer
+
 
 	//follow player vars
 	private Vector3 playerPos;
@@ -58,7 +63,11 @@ OuyaSDK.IResumeListener
 	private float everyBodyDeadTimer;
 	private bool newHighScore = false;
 
+	//playerprefs read to bools for faster access
+
+	private bool doublePipeSetsEnabled;
 	private int hellmode;
+	private bool controllerShareOn;
 	public AudioClip hellMusic;
 
 
@@ -73,6 +82,11 @@ OuyaSDK.IResumeListener
 
 		//get the playerpref value from player select
 		numberOfPlayers = PlayerPrefs.GetInt ("numberOfPlayers");
+		if(PlayerPrefs.GetInt("controllerShare",0) == 1){
+			controllerShareOn = true;
+		}else{
+			controllerShareOn = false;
+		}
 
 		//create the players
 			switch(numberOfPlayers){
@@ -103,6 +117,14 @@ OuyaSDK.IResumeListener
 			audio.Play();
 		}
 
+		//get doublePipeSet option
+		if (PlayerPrefs.GetInt ("doublepipesets", 1) == 1){
+			doublePipeSetsEnabled = true;
+		}else{
+			doublePipeSetsEnabled = false;
+		};
+
+		//music muting option
 		if (PlayerPrefs.GetInt ("music",1) == 0) {
 			audio.mute = true;
 		}
@@ -154,44 +176,99 @@ OuyaSDK.IResumeListener
 		}
 
 		//bird input switch
-		switch(numberOfPlayers){
-		case 4:
-			if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index4)) {
-				bird4.SendMessage("Jump");
+		if(controllerShareOn){
+			//yes controllerShare input switch
+			switch(numberOfPlayers){
+			case 4:
+				if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_LB, Index2)
+				    || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_LT, Index2)) {
+					bird4.SendMessage("Jump");
+				}
+				goto case 3;
+			case 3:
+				if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index2)
+				    || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_RT, Index2)
+				    || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_RB, Index2)) {
+					bird3.SendMessage("Jump");
+				}
+				goto case 2;
+			case 2:
+				if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_LB, Index)
+				    || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_LT, Index)) {
+					bird2.SendMessage("Jump");
+				}
+				goto case 1;
+			case 1:
+				if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index)
+				    || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_RT, Index)
+				    || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_RB, Index)) {
+					bird1.SendMessage("Jump");
+				}
+				break;
 			}
-			goto case 3;
-		case 3:
-			if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index3)) {
-				bird3.SendMessage("Jump");
-			}
-			goto case 2;
-		case 2:
-			if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index2)) {
-				bird2.SendMessage("Jump");
-			}
-			goto case 1;
-		case 1:
-			if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index)) {
-				bird1.SendMessage("Jump");
-			}
-			break;
-		}
 
+		}else{
+			//no controller share input switch
+			switch(numberOfPlayers){
+			case 4:
+				if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index4)) {
+					bird4.SendMessage("Jump");
+				}
+				goto case 3;
+			case 3:
+				if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index3)) {
+					bird3.SendMessage("Jump");
+				}
+				goto case 2;
+			case 2:
+				if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index2)) {
+					bird2.SendMessage("Jump");
+				}
+				goto case 1;
+			case 1:
+				if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index)) {
+					bird1.SendMessage("Jump");
+				}
+				break;
+			}
+		}
 
 
 		//if it's time to make a new pipe make one
 		if (newPipeTimer >= newPipeFrequency && !everyBodyDead) {
 
-			float randomY = Random.Range(newPipeMinY,newPipeMaxY);
-			randomY = Mathf.Round(randomY);
+			//generate a new pipe
 
-			Instantiate(singleGapPipeSet,
-			            new Vector3(gameObject.transform.position.x + newPipeOffSet,
-			            			randomY,
-			            			0f),
-			            Quaternion.identity);
+			//doubleGapPipe
+			if( doublePipeSetsEnabled &&	//are double pipes even on?
+			   (numberOfPlayers > 1)  &&	//is this a multiplayer match
+			   (Random.value < (1f / newPipeDoubleOdds))){   //random falls within 1/newPipeDoubleOdds and zero
 
-			newPipeTimer = 0f;	//reset newPipeTimer counter
+				//make doubleGapPipeSet
+				float randomY = Random.Range(newDoublePipeMinY,newDoublePipeMaxY);
+				randomY = Mathf.Round(randomY);
+				
+				Instantiate(doubleGapPipeSet,
+				            new Vector3(gameObject.transform.position.x + newPipeOffSet,
+				            randomY,
+				            0f),
+				            Quaternion.identity);
+				
+				newPipeTimer = 0f;	//reset newPipeTimer counter
+			}else{
+
+				//make singleGapPipeSet
+				float randomY = Random.Range(newPipeMinY,newPipeMaxY);
+				randomY = Mathf.Round(randomY);
+
+				Instantiate(singleGapPipeSet,
+				            new Vector3(gameObject.transform.position.x + newPipeOffSet,
+				            			randomY,
+				            			0f),
+				            Quaternion.identity);
+
+				newPipeTimer = 0f;	//reset newPipeTimer counter
+			}
 		}
 
 		//set what bird to follow if all dead just stop moving

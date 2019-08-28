@@ -10,6 +10,19 @@ OuyaSDK.IResumeListener
 	private bool[] playersOn = {true,false,false,false};
 	private bool[] playersReady = {true,false,false,false};
 	private int selectedChoice = 0;
+
+	//controller share
+	bool controllerShareOn = false;
+	bool controllerShareLastState;
+	bool controllerShareJustOn = false;
+	public Texture OUYA_Controller;
+	public Texture OUYA_U;
+	public Texture OUYA_LB;
+	public Texture OUYA_LT;
+	public Texture OUYA_RB;
+	public Texture OUYA_RT;
+	public Texture OUYA_O;
+	private float triggerImageOffset = 100f;
 	
 	private float L_STICK_DEADZONE = 0.2f;
 	
@@ -54,7 +67,19 @@ OuyaSDK.IResumeListener
 		bird3 = GameObject.Find("Yellow Bird");
 		bird4 = GameObject.Find("Green Bird");
 
+		//detect previous controller share state
+		if(PlayerPrefs.GetInt("controllerShare",0) == 1){
+			//yes controllerShare
+			controllerShareOn = true;
+		}else{
+			//no controllerShare
+			controllerShareOn = false;
+		}
 
+		if (controllerShareOn) {
+			selectedChoice = 1;
+		}
+		controllerShareLastState = controllerShareOn;  //make last state the starting state
 	}
 
 	void Awake()
@@ -98,8 +123,51 @@ OuyaSDK.IResumeListener
 		//players label
 		GUI.Label(new Rect( (Screen.width / 2f) - 50f, (Screen.height/7f) , 100, 40), "Players", styleNormal);
 
-		//press o to join
-		GUI.Label(new Rect( (Screen.width / 2f) - 50f, (5f * Screen.height/7f) , 100, 40), "Press     to join", stylePressO);
+//		//press o to join
+//		GUI.Label(new Rect( (Screen.width / 2f) - 50f, (5f * Screen.height/7f) , 100, 40), "Press     to join", stylePressO);
+	
+
+		//controllerShare GUI
+
+		//u button
+		GUI.DrawTexture(new Rect( (Screen.width * (3f / 4f) - 40f - 400f), ((Screen.height * (6.0f / 7.0f)) - 60.0f - 10f), 105, 120), OUYA_U);
+
+		if(controllerShareOn) {
+			//show controllerShare guide
+			GUI.Label(new Rect( (Screen.width * (3f / 4f) - 50f), (6f * Screen.height/7f) - 20f , 100, 40), "ControllerShare - On", stylePressO);
+
+			//p1 RB and RT
+			GUI.DrawTexture(new Rect( Screen.width * (2f / 7f) - 50f, (4f * Screen.height/7f) - 45f, 100, 90), OUYA_RB);
+			GUI.DrawTexture(new Rect( Screen.width * (2f / 7f) - 50f, (4f * Screen.height/7f) - 45f + triggerImageOffset, 100, 90), OUYA_RT);
+			//p2 LB and LT
+			GUI.DrawTexture(new Rect( Screen.width * (3f / 7f) - 50f, (4f * Screen.height/7f) - 45f, 100, 90), OUYA_LB);
+			GUI.DrawTexture(new Rect( Screen.width * (3f / 7f) - 50f, (4f * Screen.height/7f) - 45f + triggerImageOffset, 100, 90), OUYA_LT);
+			//first shared controller
+			GUI.DrawTexture(new Rect( Screen.width * (2.5f / 7f) - 60f, (4f * Screen.height/7f) - 45f + (triggerImageOffset / 2f), 120, 90), OUYA_Controller);
+
+
+			//p3 RB and RT
+			GUI.DrawTexture(new Rect( Screen.width * (4f / 7f) - 50f, (4f * Screen.height/7f) - 45f, 100, 90), OUYA_RB);
+			GUI.DrawTexture(new Rect( Screen.width * (4f / 7f) - 50f, (4f * Screen.height/7f) - 45f + triggerImageOffset, 100, 90), OUYA_RT);
+			//p4 LB and LT
+			GUI.DrawTexture(new Rect( Screen.width * (5f / 7f) - 50f, (4f * Screen.height/7f) - 45f, 100, 90), OUYA_LB);
+			GUI.DrawTexture(new Rect( Screen.width * (5f / 7f) - 50f, (4f * Screen.height/7f) - 45f + triggerImageOffset, 100, 90), OUYA_LT);
+			//second shared controller
+			GUI.DrawTexture(new Rect( Screen.width * (4.5f / 7f) - 60f, (4f * Screen.height/7f) - 45f + (triggerImageOffset / 2f), 120, 90), OUYA_Controller);
+
+
+
+
+		}else{
+			//show normal guide
+			GUI.Label(new Rect( (Screen.width * (3f / 4f) - 50f), (6f * Screen.height/7f) - 20f, 100, 40), " ControllerShare - Off", stylePressO);
+
+			//press o to join
+			GUI.Label(new Rect( (Screen.width / 2f) - 50f - 10f, (4f * Screen.height/7f) , 100, 40), "Press     to join", stylePressO);
+			GUI.DrawTexture(new Rect( (Screen.width / 2f) - 50f - 35f, (4f * Screen.height/7f) - 50f, 105, 120), OUYA_O);
+
+		}
+	
 	}
 	
 	public void OuyaMenuButtonUp()
@@ -181,7 +249,11 @@ OuyaSDK.IResumeListener
 		
 		//select button
 		//selectPressed = OuyaExampleCommon.GetButtonLeft (OuyaSDK.KeyEnum.BUTTON_O, Index);
-
+		
+		//controllerShare button
+		if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_U, Index)) {
+			controllerShareOn = !controllerShareOn;
+		}
 
 		//exit shortcut
 		if (OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_A, Index)
@@ -238,10 +310,19 @@ OuyaSDK.IResumeListener
 		}
 
 		//p1 O button to start game
-		if (Input.GetKeyDown("space") || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index)) {
+		if (Input.GetKeyDown("space") || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index)
+			|| OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_RT, Index)
+		    || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_RB, Index)){
 			print ("got it");
 			//everybody in
 			if(compare4Bools()){
+				//save controllerShare options
+				if(controllerShareOn){
+					PlayerPrefs.SetInt ("controllerShare",1);
+				}else{
+					PlayerPrefs.SetInt("controllerShare",0);
+				}
+
 				PlayerPrefs.SetInt ("numberOfPlayers", numberOfPlayers);
 				PlayerPrefs.Save();
 				Application.LoadLevel("Game Level");
@@ -249,27 +330,81 @@ OuyaSDK.IResumeListener
 			}
 		}
 
-		//p2 ready up
-		if (Input.GetKeyDown("a") || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index2)) {
-			if(playersOn[1]){
-				playersReady[1] = true;
+		//ready up buttons
+		if(controllerShareOn){
+		//yes controller share ready up
+
+			//p2 ready up
+			if (Input.GetKeyDown("a") || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_LB, Index)
+			    || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_LT, Index)) {
+				if(playersOn[1]){
+					playersReady[1] = true;
+				}
+			}
+			
+			//p3 ready up
+			if (Input.GetKeyDown("'") || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index2)
+			    || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_RT, Index2)
+			    || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_RB, Index2)) {
+				if(playersOn[2]){
+					playersReady[2] = true;
+				}
+			}
+			
+			//p4 ready up
+			if (Input.GetKeyDown("5") || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_LB, Index2)
+			    || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_LT, Index2)) {
+				if(playersOn[3]){
+					playersReady[3] = true;
+				}
+			}
+
+		}else{
+		//no controller share ready up
+
+			//p2 ready up
+			if (Input.GetKeyDown("a") || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index2)) {
+				if(playersOn[1]){
+					playersReady[1] = true;
+				}
+			}
+
+			//p3 ready up
+			if (Input.GetKeyDown("'") || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index3)) {
+				if(playersOn[2]){
+					playersReady[2] = true;
+				}
+			}
+
+			//p4 ready up
+			if (Input.GetKeyDown("5") || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index4)) {
+				if(playersOn[3]){
+					playersReady[3] = true;
+				}
 			}
 		}
 
-		//p3 ready up
-		if (Input.GetKeyDown("'") || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index3)) {
-			if(playersOn[2]){
-				playersReady[2] = true;
-			}
+		//controllerShareState catcher
+		if ((controllerShareOn != controllerShareLastState) && controllerShareLastState) {
+			//if state changed and it used to be on
+			controllerShareJustOn = true;
+
+			//controllerShare was just turned off so set players to one to avoid dummy players signed in
+			selectedChoice = 0;
+		}else{
+			controllerShareJustOn = false;
 		}
 
-		//p4 ready up
-		if (Input.GetKeyDown("5") || OuyaExampleCommon.GetButtonDown (OuyaSDK.KeyEnum.BUTTON_O, Index4)) {
-			if(playersOn[3]){
-				playersReady[3] = true;
-			}
+		//auto move to 2 player when turning on controllershare
+		if ((controllerShareOn != controllerShareLastState) && !controllerShareLastState) {
+			//controllerShare was just turned on so set the game to two player
+			selectedChoice = 1;
 		}
-	}
+
+		controllerShareLastState = controllerShareOn;  //log current state as last
+
+
+	}//end void Update()
 
 	/** activate players up to numm and deactivate after that
 	 * */
@@ -296,5 +431,15 @@ OuyaSDK.IResumeListener
 		}
 		return true;
 
+	}
+
+	/**returns dash and boolean as string ON or OFF
+	 **/
+	private string dashState(bool state){
+		if(state){
+			return "- On";
+		}else{
+			return "- Off";
+		}
 	}
 }

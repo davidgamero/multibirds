@@ -6,8 +6,8 @@ OuyaSDK.IMenuAppearingListener,
 OuyaSDK.IPauseListener,
 OuyaSDK.IResumeListener
 {
-	private string[] choices = {"Music","Hell Mode","Save and Go Back"};
-	private int[]    toggles = {   0   ,       0       ,      9999        };
+	private string[] choices = {"Music","Hell Mode","Double Pipesets","Save and Go Back"};//array of choices
+	private int[]    toggles = {   0   ,       0   ,       1         ,      9999        };//array of backup default toggle states for playerprefs without default values
 	private int selectedChoice = 0;
 	
 	private float L_STICK_DEADZONE = 0.2f;
@@ -43,6 +43,7 @@ OuyaSDK.IResumeListener
 		//import old player prefs
 		toggles[0] = PlayerPrefs.GetInt ("music",1);
 		toggles[1] = PlayerPrefs.GetInt ("hellmode",0);
+		toggles [2] = PlayerPrefs.GetInt ("doublepipesets", 1);	//default double pipes to on
 
 	}
 	void OnDestroy()
@@ -58,10 +59,10 @@ OuyaSDK.IResumeListener
 		//run this once per index in array choices
 		for (int i = 0; i < choices.Length; i++) {
 			if( i == selectedChoice){
-				GUI.Label(new Rect( (Screen.width / 2f) - 50f, ((Screen.height/3f) + (i*(Screen.height/9f)) ), 100, 40),
+				GUI.Label(new Rect( (Screen.width / 2f) - 50f, (((2 * Screen.height)/9f) + (i*(Screen.height/9f)) ), 100, 40),
 				          choices[i] + dashState(toggles[i]), styleHighlighted);
 			}else{
-				GUI.Label(new Rect( (Screen.width / 2f) - 50f, ((Screen.height/3f) + (i*(Screen.height/9f)) ), 100, 40),
+				GUI.Label(new Rect( (Screen.width / 2f) - 50f, (((2 * Screen.height)/9f) + (i*(Screen.height/9f)) ), 100, 40),
 				          choices[i] + dashState(toggles[i]), styleNormal);
 			}
 		}
@@ -87,7 +88,8 @@ OuyaSDK.IResumeListener
 		//save playerPrefs and go back
 		PlayerPrefs.SetInt("music" , toggles[0]);
 		PlayerPrefs.SetInt("hellmode" , toggles[1]);
-		
+		PlayerPrefs.SetInt ("doublepipesets", toggles [2]);
+
 		PlayerPrefs.Save();
 		Application.LoadLevel("Main Menu");
 	}
@@ -174,6 +176,9 @@ OuyaSDK.IResumeListener
 				toggles[1] = flipInt(toggles[1]);
 				break;
 			case 2:
+				toggles[2] = flipInt(toggles[2]);
+				break;
+			case 3:
 				saveAndGoBack();
 				break;
 			default:
@@ -191,8 +196,11 @@ OuyaSDK.IResumeListener
 		}
 	}
 
+	/**returns dash and boolean as string except blank for 9999
+	 **/
 	private string dashState(int state){
 		if (state == 9999) {
+			//blank state for go back option
 			return "";
 		}else if(state == 1){
 			return "- On";
@@ -209,6 +217,8 @@ OuyaSDK.IResumeListener
 		}
 	}
 
+	/**turns 1s to 0s and vice a versa but ignore all other values
+	 **/
 	private int flipInt(int toBeFlipped){
 		//turns 1s to 0s and vice a versa but ignore all other values
 		if (toBeFlipped == 0) {

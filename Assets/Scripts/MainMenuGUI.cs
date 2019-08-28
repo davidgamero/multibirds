@@ -6,11 +6,13 @@ OuyaSDK.IMenuAppearingListener,
 OuyaSDK.IPauseListener,
 OuyaSDK.IResumeListener
 {
-	private string[] choices = {"Play","Options","Credits","Donate","Exit"};
+	private string[] choices = {"Play","Options","Credits","Donate","  Exit"};
 	private int selectedChoice = 0;
 
 	private float L_STICK_DEADZONE = 0.2f;
 
+	//GUI stuff
+	public Texture OUYA_A;
 	public GUIStyle styleNormal;
 	public GUIStyle styleHighlighted;
 
@@ -23,11 +25,11 @@ OuyaSDK.IResumeListener
 	//select button boolean
 	private bool selectPressed = false;
 
-	//last joystick tilts for navigation
-	private bool lJoyUp = false; //true for one frame after left joystick become positive outside deadzone
-	private bool lJoyDown = false;	//true for one frame after left joystick become negative outside deadzone
-	private bool lastLJoyUp = false;
-	private bool lastLJoyDown = false;
+//	//last joystick tilts for navigation
+//	private bool lJoyUp = false; //true for one frame after left joystick become positive outside deadzone
+//	private bool lJoyDown = false;	//true for one frame after left joystick become negative outside deadzone
+//	private bool lastLJoyUp = false;
+//	private bool lastLJoyDown = false;
 
 	public OuyaSDK.OuyaPlayer Index;
 	
@@ -49,6 +51,7 @@ OuyaSDK.IResumeListener
 	}
 
 	void OnGUI(){
+		//show main menu choices
 		//run this once per index in array choices
 		for (int i = 0; i < choices.Length; i++) {
 			if( i == selectedChoice){
@@ -57,6 +60,10 @@ OuyaSDK.IResumeListener
 				GUI.Label(new Rect( (Screen.width / 2f) - 50f, ((Screen.height/3f) + (i*(Screen.height/9f)) ), 100, 40), choices[i], styleNormal);
 			}
 		}
+
+		//draw back button texture and text
+		GUI.DrawTexture(new Rect( ((Screen.width / 2.0f) - 100.0f - 53.0f), ((Screen.height * (7.0f / 9.0f)) - 60.0f), 105, 120), OUYA_A);
+	
 	}
 
 	public void OuyaMenuButtonUp()
@@ -102,37 +109,37 @@ OuyaSDK.IResumeListener
 			downPressed = false; //signal no new button press
 		}
 
-		//new joystick tilt detection
-		//get the raw tilts to bools
-		if (OuyaExampleCommon.GetAxisRaw (OuyaSDK.KeyEnum.AXIS_LSTICK_Y, Index) < -L_STICK_DEADZONE) {
-			lJoyUp = true;
-		} else {
-			lJoyUp = false;	
-		}
-		if (OuyaExampleCommon.GetAxisRaw (OuyaSDK.KeyEnum.AXIS_LSTICK_Y, Index) > L_STICK_DEADZONE) {
-			lJoyDown = true;
-		} else {
-			lJoyDown = false;	
-		}
-
-		//evaluate new tilts
-		if (!lastLJoyUp && lJoyUp) {
-			//if it wasnt up last time but it is now
-			lastLJoyUp = true; //log that it is up now for the next cycle
-			lJoyUp = true; //signal new up tilt
-		}else{
-			lastLJoyUp = lJoyUp; //log the current state for next cycle
-			lJoyUp = false; //signal no new joystick tilt
-		}
-
-		if (!lastLJoyDown && lJoyDown) {
-			//if it wasnt up last time but it is now
-			lastLJoyDown = true; //log that it is up now for the next cycle
-			lJoyDown = true; //signal new joystick tilt
-		}else{
-			lastLJoyDown = lJoyDown; //log the current state for next cycle
-			lJoyDown = false; //signal no new joystick tilt
-		}
+//		//new joystick tilt detection
+//		//get the raw tilts to bools
+//		if (OuyaExampleCommon.GetAxisRaw (OuyaSDK.KeyEnum.AXIS_LSTICK_Y, Index) < -L_STICK_DEADZONE) {
+//			lJoyUp = true;
+//		} else {
+//			lJoyUp = false;	
+//		}
+//		if (OuyaExampleCommon.GetAxisRaw (OuyaSDK.KeyEnum.AXIS_LSTICK_Y, Index) > L_STICK_DEADZONE) {
+//			lJoyDown = true;
+//		} else {
+//			lJoyDown = false;	
+//		}
+//
+//		//evaluate new tilts
+//		if (!lastLJoyUp && lJoyUp) {
+//			//if it wasnt up last time but it is now
+//			lastLJoyUp = true; //log that it is up now for the next cycle
+//			lJoyUp = true; //signal new up tilt
+//		}else{
+//			lastLJoyUp = lJoyUp; //log the current state for next cycle
+//			lJoyUp = false; //signal no new joystick tilt
+//		}
+//
+//		if (!lastLJoyDown && lJoyDown) {
+//			//if it wasnt up last time but it is now
+//			lastLJoyDown = true; //log that it is up now for the next cycle
+//			lJoyDown = true; //signal new joystick tilt
+//		}else{
+//			lastLJoyDown = lJoyDown; //log the current state for next cycle
+//			lJoyDown = false; //signal no new joystick tilt
+//		}
 
 		//select button
 		//selectPressed = Input.GetKeyDown("space");
@@ -168,11 +175,11 @@ OuyaSDK.IResumeListener
 		}
 
 		//handling choice movement
-		if ((upPressed || lJoyUp) && (selectedChoice > 0)) {
+		if ((upPressed) && (selectedChoice > 0)) {
 			selectedChoice -= 1;
 		}
 
-		if((downPressed || lJoyDown) && (selectedChoice < (choices.Length - 1))){
+		if((downPressed) && (selectedChoice < (choices.Length - 1))){
 			selectedChoice += 1;
 		}
 
